@@ -2,6 +2,21 @@
 
 #include <stdio.h>
 
+typedef struct
+{
+    int row_step;
+    int column_step;
+} Direction;
+
+#define DIRECTIONS_NUMBER 4
+static const Direction directions[DIRECTIONS_NUMBER] =
+{
+    { +1,  0 }, // check vertical
+    {  0, +1 }, // check horizontal
+    { +1, +1 }, // check diagonal down
+    { -1, +1 },// check diagonal up
+};
+
 int Tile_print(Tile tile)
 {
     int ret = RET_SUCCESS;
@@ -69,6 +84,39 @@ CLEANUP:
     return ret;
 }
 
+// this is an internal function only called by Board_checkWinCondition so it should always be called with correct parameters
+static int Board_checkWinCondition_singleLine(const Board* board, int row, int column, int row_step, int column_step, Tile* winner)
+{
+    int ret = RET_SUCCESS;
+    CHECK_ASSERT(board != NULL, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(row >= 0 && row < BOARD_HEIGHT, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(column >= 0 && row < BOARD_WIDTH, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(row_step >= -1 && row_step <= 1, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(column_step >= 0 && column_step <= 1, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(winner != NULL, RET_INTERNAL_ERROR);
+    
+    Tile current_tile = board->tiles[row][column];
+    if (current_tile == Tile_EMPTY) goto CLEANUP;
+    
+    CHECK_ASSERT(current_tile == Tile_PLAYER_O || current_tile == Tile_PLAYER_X, RET_INTERNAL_ERROR);
+    
+    if (row                  >= WIN_CONDITION * -row_step &&
+        BOARD_HEIGHT - row   >= WIN_CONDITION * row_step &&
+        BOARD_WIDTH - column >= WIN_CONDITION * column_step)
+    {
+        for (int i = 0; i < WIN_CONDITION; i++)
+        {
+            Tile checked_tile = board->tiles[row + i * row_step][column + i * column_step];
+            if (checked_tile != current_tile) goto CLEANUP;
+        }
+        *winner = current_tile;
+        goto CLEANUP;
+    }
+    
+    CLEANUP:
+    return ret;
+}
+
 int Board_checkWinCondition(const Board* board, Tile* winner)
 {
     int ret = RET_SUCCESS;
@@ -82,80 +130,10 @@ int Board_checkWinCondition(const Board* board, Tile* winner)
             Tile current_tile = board->tiles[row][column];
             if (current_tile == Tile_EMPTY) continue;
             
-            // check vertical
-            if (BOARD_HEIGHT - row >= WIN_CONDITION)
+            for (int i = 0; i < DIRECTIONS_NUMBER; i++)
             {
-                bool win = true;
-                for (int i = 0; i < WIN_CONDITION; i++)
-                {
-                    if (board->tiles[row + i][column] != current_tile)
-                    {
-                        win = false;
-                        continue;
-                    }
-                }
-                if (win)
-                {
-                    *winner = current_tile;
-                    goto CLEANUP;
-                }
-            }
-            
-            // check horizontal
-            if (BOARD_WIDTH - column >= WIN_CONDITION)
-            {
-                bool win = true;
-                for (int i = 0; i < WIN_CONDITION; i++)
-                {
-                    if (board->tiles[row][column + i] != current_tile)
-                    {
-                        win = false;
-                        continue;
-                    }
-                }
-                if (win)
-                {
-                    *winner = current_tile;
-                    goto CLEANUP;
-                }
-            }
-            
-            // check diagonal down
-            if (BOARD_HEIGHT - row >= WIN_CONDITION && BOARD_WIDTH - column >= WIN_CONDITION)
-            {
-                bool win = true;
-                for (int i = 0; i < WIN_CONDITION; i++)
-                {
-                    if (board->tiles[row + i][column + i] != current_tile)
-                    {
-                        win = false;
-                        continue;
-                    }
-                }
-                if (win)
-                {
-                    *winner = current_tile;
-                    goto CLEANUP;
-                }
-            }
-            
-            // check diagonal up
-            if (row >= WIN_CONDITION && BOARD_WIDTH - column >= WIN_CONDITION)
-            {
-                bool win = true;
-                for (int i = 0; i < WIN_CONDITION; i++)
-                {
-                    if (board->tiles[row - i][column + i] != current_tile)
-                    {
-                        win = false;
-                        continue;
-                    }
-                }
-                if (win)
-                {
-                    *winner = current_tile;
-                    goto CLEANUP;
-                }
+                Board_checkWinCondition_singleLine(board, row, column, directions[i].row_step, directions[i].column_step, winner);
+                if (*winner != Tile_EMPTY) goto CLEANUP;
             }
         }
     }
