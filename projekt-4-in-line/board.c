@@ -16,29 +16,6 @@ static const Direction directions[DIRECTIONS_NUMBER] =
     { -1, +1 },// check diagonal up
 };
 
-int Tile_print(Tile tile)
-{
-    int ret = RET_SUCCESS;
-    switch (tile)
-    {
-    case Tile_EMPTY:
-        printf(" ");
-        break;
-    case Tile_PLAYER_X:
-        printf("X");
-        break;
-    case Tile_PLAYER_O:
-        printf("O");
-        break;
-    default:
-        assert(0);
-        ret = RET_INTERNAL_ERROR;
-        goto CLEANUP;
-    }
-CLEANUP:
-    return ret;
-}
-
 int Board_init(Board* board)
 {
     int ret = RET_SUCCESS;
@@ -121,13 +98,19 @@ int Board_checkWinCondition(const Board* board, Tile* winner)
     int ret = RET_SUCCESS;
     CHECK_ASSERT(board != NULL);
     CHECK_ASSERT(winner != NULL);
+
+    bool draw = true;
     
     for (int row = 0; row < BOARD_HEIGHT; row++)
     {
         for (int column = 0; column < BOARD_WIDTH; column++)
         {
             Tile current_tile = board->tiles[row][column];
-            if (current_tile == Tile_EMPTY) continue;
+            if (current_tile == Tile_EMPTY)
+            {
+                draw = false;
+                continue;
+            }
             
             for (int i = 0; i < DIRECTIONS_NUMBER; i++)
             {
@@ -138,6 +121,7 @@ int Board_checkWinCondition(const Board* board, Tile* winner)
     }
     
     *winner = Tile_EMPTY;
+    if (draw) ret = RET_CHECK_WIN_CONDITION_DRAW;
     
 CLEANUP:
     return ret;

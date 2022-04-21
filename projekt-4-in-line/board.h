@@ -21,14 +21,13 @@ typedef struct
     Tile tiles[BOARD_HEIGHT][BOARD_WIDTH];
 } Board;
 
-int Tile_print(Tile tile);
-
 int Board_init(Board* board);
 
 #define RET_BOARD_MAKE_MOVE_WRONG_COLUMN 1001
 #define RET_BOARD_MAKE_MOVE_COLUMN_FULL 1002
 int Board_makeMove(Board* board, int column, Tile move);
 
+#define RET_CHECK_WIN_CONDITION_DRAW 1001
 int Board_checkWinCondition(const Board* board, Tile* winner);
 
 #endif // BOARD_H

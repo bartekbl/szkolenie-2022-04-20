@@ -4,18 +4,27 @@
 #include "board.h"
 #include "player.h"
 
+typedef enum
+{
+    Game_PLAYING,
+    Game_VICTORY,
+    Game_DRAW,
+    Game_INTERRUPTED,
+} Game_State;
+
 typedef struct
 {
     Board board;
-    Tile winner;
     Player player1;
     Player player2;
     Player* current_player;
+    Game_State state;
     char error[100];
 } Game;
 
 int Game_init(Game* game);
 
+#define RET_GAME_PRINT_GAME_ENDED 1001
 int Game_print(const Game* game);
 
 int Game_nextPlayer(Game* game);
