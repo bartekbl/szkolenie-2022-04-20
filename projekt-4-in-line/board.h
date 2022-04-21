@@ -2,6 +2,7 @@
 #define BOARD_H
 
 #include "ret.h"
+#include "view.h"
 
 #include <stdbool.h>
 
@@ -30,4 +31,7 @@ int Board_makeMove(Board* board, int column, Tile move);
 #define RET_CHECK_WIN_CONDITION_DRAW 1001
 int Board_checkWinCondition(const Board* board, Tile* winner);
 
+int Board_accept(const Board* board, const View* view);
+
 #endif // BOARD_H
+    

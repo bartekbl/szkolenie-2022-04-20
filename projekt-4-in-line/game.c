@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 
 int Game_init(Game* game)
 {
@@ -16,108 +15,6 @@ int Game_init(Game* game)
     game->player2 = (Player) { "Eve", Tile_PLAYER_O };
     game->state = Game_PLAYING;
     game->error[0] = '\0';
-CLEANUP:
-    return ret;
-}
-
-static int translateTile(Tile tile, char* printable)
-{
-    int ret = RET_SUCCESS;
-    switch (tile)
-    {
-    case Tile_EMPTY:
-        *printable = ' ';
-        break;
-    case Tile_PLAYER_X:
-        *printable = 'X';
-        break;
-    case Tile_PLAYER_O:
-        *printable = 'O';
-        break;
-    default:
-        assert(0);
-        ret = RET_INTERNAL_ERROR;
-        goto CLEANUP;
-    }
-CLEANUP:
-    return ret;
-}
-
-static int printNumbersLine()
-{
-    for (int column = 0; column < BOARD_WIDTH; column++)
-    {
-        printf(" %d", column + 1);
-    }
-    printf("\n");
-    return RET_SUCCESS;
-}
-
-static int printDividerLine()
-{
-    for (int column = 0; column < BOARD_WIDTH; column++)
-    {
-        printf("+-");
-    }
-    printf("+\n");
-    return RET_SUCCESS;
-}
-
-static int printBoard(const Board* board)
-{
-    int ret = RET_SUCCESS;
-    CHECK_ASSERT(board != NULL);
-
-    CALL(printNumbersLine());
-    for (int row = 0; row < BOARD_HEIGHT; row++)
-    {
-        CALL(printDividerLine());
-        for (int column = 0; column < BOARD_WIDTH; column++)
-        {
-            char printable = ' ';
-            CALL(translateTile(board->tiles[row][column], &printable));
-            printf("|%c", printable);
-        }
-        printf("|\n");
-    }
-    CALL(printDividerLine());
-    CALL(printNumbersLine());
-CLEANUP:
-    return ret;
-}
-
-int Game_print(const Game* game)
-{
-    int ret = RET_SUCCESS;
-    CHECK_ASSERT(game != NULL);
-    
-    printf("\x1B[2J\x1B[1;1H"); // clear screen
-    if (game->error[0] != '\0')
-    {
-        printf("\x1B[97;101mERROR: %s\x1B[0m", game->error);
-    }
-    if (game->state == Game_VICTORY)
-    {
-        printf("\x1B[30;102m%s wins\n\x1B[0m", game->current_player->name);
-    }
-    else if (game->state == Game_DRAW)
-    {
-        printf("\x1B[30;47mDraw.\n\x1B[0m");
-    }
-    else if (game->state == Game_PLAYING)
-    {
-        char printable = ' ';
-        CALL(translateTile(game->current_player->token, &printable));
-        printf("Move of %s - insert token %c\n", game->current_player->name, printable);
-    }
-    else
-    {
-        printf("\x1B[30;47mGame ended.\n\x1B[0m");
-        ret = RET_GAME_PRINT_GAME_ENDED;
-        goto CLEANUP;
-    }
-    CALL(printBoard(&game->board));
-    
 CLEANUP:
     return ret;
 }
@@ -170,7 +67,11 @@ int Game_step(Game *game, char input)
     int ret = Game_makeMove(game, column);
     if (ret != RET_SUCCESS)
     {
-        if (ret == RET_BOARD_MAKE_MOVE_COLUMN_FULL) sprintf(game->error, "Column %d full\n", column);
+        if (ret == RET_BOARD_MAKE_MOVE_COLUMN_FULL)
+        {
+            sprintf(game->error, "Column %d full\n", column);
+            ret = RET_SUCCESS; // error was handler
+        }
         else sprintf(game->error, "unknown error: %d\n", ret);
         
         goto CLEANUP;
@@ -182,6 +83,35 @@ int Game_step(Game *game, char input)
         sprintf(game->error, "unknown error: %d\n", ret);
         goto CLEANUP;
     }
+    
+    if (game->state == Game_PLAYING) CALL(Game_nextPlayer(game));
+
+CLEANUP:
+    return ret;
+}
+
+int Game_accept(const Game* game, View* view)
+{
+    int ret = RET_SUCCESS;
+    CALL(View_setError(view, game->error));
+    CALL(View_setPlayerName(view, game->current_player->name));
+    CALL(View_setPlayerToken(view, game->current_player->token));
+    switch (game->state)
+    {
+    case Game_DRAW:
+        CALL(View_setState(view, View_DRAW));
+        break;
+    case Game_PLAYING:
+        CALL(View_setState(view, View_PLAYING));
+        break;
+    case Game_VICTORY:
+        CALL(View_setState(view, View_VICTORY));
+        break;
+    case Game_INTERRUPTED:
+        CALL(View_setState(view, View_GAME_ENDED));
+        break;
+    }
+
 CLEANUP:
     return ret;
 }
@@ -190,19 +120,22 @@ int Game_run(Game *game)
 {
     int ret;
     CHECK_ASSERT(game != NULL);
+    View view;
+    View_init(&view);
     while (true)
     {
-        Game_print(game);
-        printf("Please press a number 1÷7\n");
-        char input = getchar();
-        while (isspace(input)) input = getchar();
+        Game_accept(game, &view);
+        Board_accept(&game->board, &view);
+        char input;
+        CALL(View_getInput(&view, &input));
+        
         if (input == 'q') break;
-        if (input >= '1' && input <= '7') Game_step(game, input);
+        if (input >= '1' && input <= '7') CALL(Game_step(game, input));
         
         if (game->state != Game_PLAYING) break;
-        CALL(Game_nextPlayer(game));
     }
-    Game_print(game);
+    Game_accept(game, &view);
+    Board_accept(&game->board, &view);
 CLEANUP:
     return ret;
 }

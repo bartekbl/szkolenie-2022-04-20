@@ -126,3 +126,28 @@ int Board_checkWinCondition(const Board* board, Tile* winner)
 CLEANUP:
     return ret;
 }
+
+int Board_accept(const Board *board, const View *view)
+{
+    int ret = RET_SUCCESS;
+    CHECK_ASSERT(board != NULL);
+    CHECK_ASSERT(view != NULL);
+
+    int display_data[BOARD_HEIGHT][BOARD_WIDTH];
+    
+    for (int row = 0; row < BOARD_HEIGHT; row++)
+    {
+        for (int column = 0; column < BOARD_WIDTH; column++)
+        {
+            Tile current_tile = board->tiles[row][column];
+            if      (current_tile == Tile_PLAYER_X) display_data[row][column] = 1;
+            else if (current_tile == Tile_PLAYER_O) display_data[row][column] = 2;
+            else                                    display_data[row][column] = 0;
+        }
+    }
+    
+    View_visit(view, BOARD_HEIGHT, BOARD_WIDTH, display_data);
+    
+CLEANUP:
+    return ret;
+}

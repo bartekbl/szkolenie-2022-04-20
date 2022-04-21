@@ -24,9 +24,6 @@ typedef struct
 
 int Game_init(Game* game);
 
-#define RET_GAME_PRINT_GAME_ENDED 1001
-int Game_print(const Game* game);
-
 int Game_nextPlayer(Game* game);
 
 int Game_makeMove(Game *game, int column);
