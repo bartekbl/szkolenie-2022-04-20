@@ -116,26 +116,24 @@ CLEANUP:
     return ret;
 }
 
-int Game_run(Game *game)
+int Game_run(Game *game, View* view)
 {
     int ret;
     CHECK_ASSERT(game != NULL);
-    View view;
-    View_init(&view);
     while (true)
     {
-        Game_accept(game, &view);
-        Board_accept(&game->board, &view);
+        Game_accept(game, view);
+        Board_accept(&game->board, view);
         char input;
-        CALL(View_getInput(&view, &input));
+        CALL(View_getInput(view, &input));
         
         if (input == 'q') break;
         if (input >= '1' && input <= '7') CALL(Game_step(game, input));
         
         if (game->state != Game_PLAYING) break;
     }
-    Game_accept(game, &view);
-    Board_accept(&game->board, &view);
+    Game_accept(game, view);
+    Board_accept(&game->board, view);
 CLEANUP:
     return ret;
 }

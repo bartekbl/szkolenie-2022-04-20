@@ -32,6 +32,6 @@ int Game_checkWinCondition(Game *game);
 
 int Game_step(Game *game, char input);
 
-int Game_run(Game *game);
+int Game_run(Game *game, View *view);
 
 #endif // GAME_H
