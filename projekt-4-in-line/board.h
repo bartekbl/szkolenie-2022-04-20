@@ -31,7 +31,4 @@ int Board_makeMove(Board* board, int column, Tile move);
 
 int Board_checkWinCondition(const Board* board, Tile* winner);
 
-int Board_print(const Board* board);
-
-
 #endif // BOARD_H

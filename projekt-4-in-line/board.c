@@ -1,6 +1,5 @@
 #include "board.h"
-
-#include <stdio.h>
+#include <stddef.h>
 
 typedef struct
 {
@@ -61,8 +60,8 @@ int Board_init(Board* board)
 int Board_makeMove(Board* board, int column, Tile move)
 {
     int ret = RET_SUCCESS;
-    CHECK_ASSERT(move != Tile_EMPTY, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(board != NULL, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(move != Tile_EMPTY);
+    CHECK_ASSERT(board != NULL);
     CHECK(column >= 1 || column <= BOARD_WIDTH, RET_BOARD_MAKE_MOVE_WRONG_COLUMN);
     
     column -= 1; // column is 1-based but array is 0-based
@@ -88,17 +87,17 @@ CLEANUP:
 static int Board_checkWinCondition_singleLine(const Board* board, int row, int column, int row_step, int column_step, Tile* winner)
 {
     int ret = RET_SUCCESS;
-    CHECK_ASSERT(board != NULL, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(row >= 0 && row < BOARD_HEIGHT, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(column >= 0 && row < BOARD_WIDTH, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(row_step >= -1 && row_step <= 1, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(column_step >= 0 && column_step <= 1, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(winner != NULL, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(board != NULL);
+    CHECK_ASSERT(row >= 0 && row < BOARD_HEIGHT);
+    CHECK_ASSERT(column >= 0 && row < BOARD_WIDTH);
+    CHECK_ASSERT(row_step >= -1 && row_step <= 1);
+    CHECK_ASSERT(column_step >= 0 && column_step <= 1);
+    CHECK_ASSERT(winner != NULL);
     
     Tile current_tile = board->tiles[row][column];
     if (current_tile == Tile_EMPTY) goto CLEANUP;
     
-    CHECK_ASSERT(current_tile == Tile_PLAYER_O || current_tile == Tile_PLAYER_X, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(current_tile == Tile_PLAYER_O || current_tile == Tile_PLAYER_X);
     
     if (row                  >= WIN_CONDITION * -row_step &&
         BOARD_HEIGHT - row   >= WIN_CONDITION * row_step &&
@@ -120,8 +119,8 @@ static int Board_checkWinCondition_singleLine(const Board* board, int row, int c
 int Board_checkWinCondition(const Board* board, Tile* winner)
 {
     int ret = RET_SUCCESS;
-    CHECK_ASSERT(board != NULL, RET_INTERNAL_ERROR);
-    CHECK_ASSERT(winner != NULL, RET_INTERNAL_ERROR);
+    CHECK_ASSERT(board != NULL);
+    CHECK_ASSERT(winner != NULL);
     
     for (int row = 0; row < BOARD_HEIGHT; row++)
     {
@@ -140,43 +139,6 @@ int Board_checkWinCondition(const Board* board, Tile* winner)
     
     *winner = Tile_EMPTY;
     
-CLEANUP:
-    return ret;
-}
-
-int Board_print(const Board* board)
-{
-    int ret = 0;
-    assert(board != NULL);
-    for (int column = 0; column < BOARD_WIDTH; column++)
-    {
-        printf(" %d", column + 1);
-    }
-    printf("\n");
-    for (int row = 0; row < BOARD_HEIGHT; row++)
-    {
-        for (int column = 0; column < BOARD_WIDTH; column++)
-        {
-            printf("+-");
-        }
-        printf("+\n");
-        for (int column = 0; column < BOARD_WIDTH; column++)
-        {
-            printf("|");
-            CALL(Tile_print(board->tiles[row][column]));
-        }
-        printf("|\n");
-    }
-    for (int column = 0; column < BOARD_WIDTH; column++)
-    {
-        printf("+-");
-    }
-    printf("+\n");
-    for (int column = 0; column < BOARD_WIDTH; column++)
-    {
-        printf(" %d", column + 1);
-    }
-    printf("\n");
 CLEANUP:
     return ret;
 }
